@@ -3,36 +3,29 @@
 #### 介绍
 一款免费的php加密系统
 加密算法正在持续更新中。
+支持批量加密php文件
 
-#### 软件架构
-软件架构说明
+#### 版本信息
+
+1.  使用加密算法V1.0
 
 
 #### 安装教程
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1.  上传解压到你的服务器即可
+2.  推荐使用php72
 
 #### 使用说明
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1.  使用前请先将你要加密的php文件压缩成zip格式的压缩包，再上传加密
+2.  系统只能检测zip格式的文件，请勿直接上传php文件或者使用其他格式的压缩包
 
-#### 参与贡献
+#### 说明
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+1.  本系统中部分加密方式使用了https://github.com/djunny/enphp 中的加密，感谢其开源分享
 
 
-#### 特技
+#### 演示站
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+加密算法V2.0：[http://jm.lwcat.cn](http://jm.lwcat.cn)
+加密算法V1.0：[http://jm.lwcat.cn/v1](http://jm.lwcat.cn/v1)
