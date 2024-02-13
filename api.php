@@ -1,6 +1,5 @@
 <?php
 //BY：云猫
-//QQ3522934828
 include("func_v2.php");
     // 文件保存地址，自己修改
 $uploadDir = "uploads/";
