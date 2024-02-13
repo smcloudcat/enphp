@@ -1,67 +1,72 @@
 <?php
 //BY：云猫
+//QQ3522934828
 include("func_v2.php");
-    // 文件保存地址，自己修改
-$uploadDir = "enphp/";
 
 // Check if a file has been uploaded
 if (isset($_FILES["file"]) && $_FILES["file"]["error"] === 0) {
+    $uploadDir = "enphp/";
     // 获取上传信息
-    $targetFile = $uploadDir . basename($_FILES["file"]["name"]);
     $fileName = $_FILES["file"]["name"];
     $fileTmp = $_FILES["file"]["tmp_name"];
-    $imageFileType = strtolower(pathinfo($targetFile,PATHINFO_EXTENSION));
+    $imageFileType = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 
-// 检查文件类型
-if($imageFileType != "zip") {
-    echo json_encode(['error' => 'zip']);
-    $uploadOk = 0;
-}
-
-    move_uploaded_file($fileTmp, $uploadDir . $fileName);
-
-    // 处理压缩包
-    $zip = new ZipArchive;
-    $zip->open($uploadDir . $fileName);
-    $zip->extractTo($uploadDir);
-    $zip->close();
-
-    $files = glob($uploadDir . "*.php");
-    foreach ($files as $file) {
-        $content = file_get_contents($file);
-        $content = preg_replace('/<\?php/', '', $content);
-        $content = preg_replace('/\?>/','',$content);
-        file_put_contents($file, $content);
+    // 检查文件类型
+    if ($imageFileType != "zip") {
+        echo json_encode(['error' => 'zip']);
+        exit; // exit if the file is not a zip
     }
+
+    // 创建临时文件夹
+    $tempDir = "temp_" . time() . "/";
+    mkdir($tempDir);
+
+    // 移动上传的zip文件到临时文件夹
+    $targetFile = $tempDir . $fileName;
+    move_uploaded_file($fileTmp, $targetFile);
+
+    // 解压缩文件
+    $zip = new ZipArchive;
+    if ($zip->open($targetFile) === TRUE) {
+        $zip->extractTo($tempDir);
+        $zip->close();
+    } else {
+        echo json_encode(['error' => '解压失败']);
+        exit; // exit if unable to extract zip
+    }
+
+    // 获取解压后的文件列表
+    $files = glob($tempDir . "*.php");
 
     // 加密
     foreach ($files as $file) {
         $content = file_get_contents($file);
         $encryptedContent = base64_encode($content);
-        file_put_contents($file, enphp("<?php eval(base64_decode('$encryptedContent')); ?>",$options));
+        file_put_contents($file, enphp("<?php eval(base64_decode('$encryptedContent')); ?>", $options));
     }
-    // 压缩。。。
-    $timestamp = time();
-    $newZipName = $timestamp . ".zip";
+
+    // 压缩
+    $newZipName = "encrypted_" . time() . ".zip";
     $zip = new ZipArchive;
     if ($zip->open($uploadDir . $newZipName, ZipArchive::CREATE) === TRUE) {
         foreach ($files as $file) {
             $zip->addFile($file, basename($file));
         }
         $zip->close();
-        
-         echo json_encode([
-            'filename' =>  $fileName,
+
+        // 删除临时文件夹及其内容
+        foreach ($files as $file) {
+            unlink($file);
+        }
+       deleteDirectory($tempDir);
+
+        echo json_encode([
+            'filename' => $newZipName,
             'result' => "加密成功",
-            'url' => $uploadDir.$newZipName
+            'url' => $uploadDir . $newZipName
         ]);
-        unlink($uploadDir . $fileName);
     } else {
         echo json_encode(['error' => '打包失败，请检查权限']);
-    }
-
-    foreach ($files as $file) {
-        unlink($file);
     }
 } else {
     // If no file is uploaded, display message
