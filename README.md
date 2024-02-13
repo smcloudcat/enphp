@@ -32,3 +32,5 @@
   加密算法V2.0：[http://jm.lwcat.cn](http://jm.lwcat.cn)
 
   加密算法V1.0：[http://jm.lwcat.cn/v1](http://jm.lwcat.cn/v1)
+
+BY：云猫&QQ3522934828
