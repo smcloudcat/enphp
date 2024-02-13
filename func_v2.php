@@ -11,6 +11,29 @@ $_SERVER['time']      = $starttime[1];
  *
  * @return string
  */
+ function deleteDirectory($dir) {
+    if (!file_exists($dir)) {
+        return true;
+    }
+
+    if (!is_dir($dir)) {
+        return unlink($dir);
+    }
+
+    foreach (scandir($dir) as $item) {
+        if ($item == '.' || $item == '..') {
+            continue;
+        }
+
+        if (!deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) {
+            return false;
+        }
+
+    }
+
+    return rmdir($dir);
+}
+
 function enphp($content, $options = array()) {
     $deep            = max(1, isset($options['deep']) ? (int)$options['deep'] : 1);
     $deep            = min($deep, 10);
