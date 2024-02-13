@@ -2,7 +2,7 @@
 //BY：云猫
 include("func_v2.php");
     // 文件保存地址，自己修改
-$uploadDir = "uploads/";
+$uploadDir = "enphp/";
 
 // Check if a file has been uploaded
 if (isset($_FILES["file"]) && $_FILES["file"]["error"] === 0) {
