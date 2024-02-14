@@ -43,8 +43,10 @@
 
 #### 演示站
 
-  加密算法V2.0：[http://jm.lwcat.cn](http://jm.lwcat.cn)
-
   加密算法V1.0：[http://jm.lwcat.cn/v1](http://jm.lwcat.cn/v1)
+
+  加密算法V1.1：[http://jm.lwcat.cn/](http://jm.lwcat.cn/)
+
+  加密算法V2.0：[http://jm.lwcat.cn/v2](http://jm.lwcat.cn)
 
 BY：云猫&QQ3522934828
