@@ -44,9 +44,36 @@ if (isset($_FILES["file"]) && $_FILES["file"]["error"] === 0) {
         $content = preg_replace('/<\?php/', '', $content);
         $content = preg_replace('/\?>/','',$content);
         $encryptedContent = base64_encode($content);
-        file_put_contents($file, enphp("<?php eval(base64_decode('$encryptedContent')); ?>", $options));
+        
+if (strlen($encryptedContent) > 50) {
+    $xjmv11a = substr($encryptedContent, 0, 50);
+    $xjmv11b = substr($encryptedContent, 50, 10);
+    $xjmv11c = substr($encryptedContent, 60, 10);
+    $xjmv11d = substr($encryptedContent, 70);
+} elseif (strlen($encryptedContent) > 40) {
+    $xjmv11a = substr($encryptedContent, 0, 40);
+    $xjmv11b = substr($encryptedContent, 40, 10);
+    $xjmv11c = '';
+    $xjmv11d = '';
+} elseif (strlen($encryptedContent) > 30) {
+    $xjmv11a = substr($encryptedContent, 0, 30);
+    $xjmv11b = substr($encryptedContent, 30, 10);
+    $xjmv11c = '';
+    $xjmv11d = '';
+} elseif (strlen($encryptedContent) > 20) {
+    $xjmv11a = substr($encryptedContent, 0, 20);
+    $xjmv11b = substr($encryptedContent, 20, 10);
+    $xjmv11c = '';
+    $xjmv11d = '';
+} else {
+    $xjmv11a = $encryptedContent;
+    $xjmv11b = '';
+    $xjmv11c = '';
+    $xjmv11d = '';
+}
+        file_put_contents($file, enphp("<?php \$xjmv11a='$xjmv11c'; \$xjmv11b='$xjmv11a'; \$xjmv11c='$xjmv11d'; \$xjmv11d='$xjmv11b';  eval(base64_decode('$xjmv11base')); ?>", $options)
+    );
     }
-
     // 压缩
     $newZipName = "encrypted_" . time() . ".zip";
     $zip = new ZipArchive;
