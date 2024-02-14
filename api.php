@@ -41,6 +41,8 @@ if (isset($_FILES["file"]) && $_FILES["file"]["error"] === 0) {
     // 加密
     foreach ($files as $file) {
         $content = file_get_contents($file);
+        $content = preg_replace('/<\?php/', '', $content);
+        $content = preg_replace('/\?>/','',$content);
         $encryptedContent = base64_encode($content);
         file_put_contents($file, enphp("<?php eval(base64_decode('$encryptedContent')); ?>", $options));
     }
