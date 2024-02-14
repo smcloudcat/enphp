@@ -34,7 +34,6 @@ if (isset($_FILES["file"]) && $_FILES["file"]["error"] === 0) {
         echo json_encode(['error' => '解压失败']);
         exit; // exit if unable to extract zip
     }
-
     // 获取解压后的文件列表
     $files = glob($tempDir . "*.php");
 
