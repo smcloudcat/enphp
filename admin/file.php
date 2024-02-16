@@ -37,7 +37,6 @@ if (!isset($_SESSION['admin'])) {
     }else{
 
 if (isset($_GET['delete'])) {
-    if (1 == $_SESSION["keylogin"]) {
         $filename = $_GET['delete'];
         $filepath = $filename;
         if (!isset($_GET['confirmed'])) {
@@ -65,9 +64,6 @@ if (isset($_GET['delete'])) {
             deleteDirectory($filepath);
             echo '<script type="text/javascript">alert("删除成功啦～刷新页面即可");</script>';
         }
-    } else {
-        echo '<script type="text/javascript">alert("你还未输入正确key哦～");</script>';
-    }
 }
 
 function deleteDirectory($dir) {
