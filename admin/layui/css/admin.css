@@ -1,0 +1,54 @@
+body {
+    background-image: url('https://img.czzu.cn/u/enphp/JHKpab6v.jpg');
+    background-size: cover;
+}
+
+.demo-login-container {
+    max-width: 600px;
+    margin: 21px auto 0;
+    background-color: rgba(255, 255, 255, 0.5);
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.demo-login-container input {
+    background-color: rgba(255, 255, 255, 0.4);
+    border: none;
+}
+.demo-login-container textarea {
+    background-color: rgba(255, 255, 255, 0.4);
+    border: none;
+}
+
+.table-container {
+    width: 80%;
+    max-width: 1200px;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.demo-login-container table {
+    background-color: rgba(255, 255, 255, 0.4);
+    border: none;
+}
+.demo-login-other .layui-icon {
+    position: relative;
+    display: inline-block;
+    margin: 0 2px;
+    top: 2px;
+    font-size: 26px;
+}
+
+.login-header {
+    font-size: 15px;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem !important;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .demo-login-container {
+        max-width: 100%;
+    }
+}
