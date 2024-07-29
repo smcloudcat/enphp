@@ -7,7 +7,7 @@ echo "非法请求";
 
 if ($_GET['act'] === 'login') {
     $credentials = json_decode(file_get_contents('../data/admin_credentials.json'), true);
-    if ($_POST['username'] === $credentials['username'] && md5(md5($_POST['password'])) === $credentials['password']) {
+    if ($_POST['username'] === $credentials['username'] && md5(md5($_POST['password'].'xiaocat').'xiaocat') === $credentials['password']) {
         $_SESSION['admin'] = true;
         echo "1";
     } else {
@@ -22,7 +22,7 @@ if ($_GET['act'] === 'change') {
     } else {
         $credentials = json_decode(file_get_contents('../data/admin_credentials.json'), true);
         $newUsername = $_POST['newUsername'];
-        $newPassword = md5(md5($_POST['newPassword']));
+        $newPassword = md5(md5($_POST['newPassword'].'xiaocat').'xiaocat');
         $credentials['username'] = $newUsername;
         $credentials['password'] = $newPassword;
         file_put_contents('../data/admin_credentials.json', json_encode($credentials));
@@ -42,6 +42,8 @@ if ($_GET['act'] === 'set') {
             'keyword' => $_POST['keyword'],
             'foot' => $_POST['foot'],
             'bq' => $_POST['bq'],
+            'cdn' => $_POST['cdn'],
+            'css' => $_POST['css'],
             'gg' => $_POST['gg']
         );
         file_put_contents('../data/data.json', json_encode($data));

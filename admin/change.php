@@ -1,3 +1,4 @@
+<?php $data = json_decode(file_get_contents('../data/data.json'), true);?>
 <?php
 session_start();
     if (!isset($_SESSION['admin'])) {
@@ -12,9 +13,9 @@ session_start();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>小猫咪PHP加密系统</title>
     <!-- 引入layui框架 -->
-    <link rel="stylesheet" href="../layui/css/layui.css">
+    <link rel="stylesheet" href="<?php echo $data['cdn']; ?>css/layui.css">
     <script src="https://cdn.lwcat.cn/jquery/jquery.js"></script>
-    <link rel="stylesheet" href="../layui/css/admin.css">
+    <link rel="stylesheet" href="https://cdn.lwcat.cn/enphp/admin.css">
 </head>
 <body>
             <form class="layui-form" id="loginForm">
@@ -45,7 +46,7 @@ session_start();
         </div>
     </form>
 
-<script src="../layui/layui.js"></script>
+<script src="<?php echo $data['cdn']; ?>layui.js"></script>
 <script>
 
     layui.use('form', function(){

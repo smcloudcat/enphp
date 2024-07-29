@@ -1,5 +1,5 @@
 body {
-    background-image: url('https://img.lwcat.cn/images/2024/02/15/bea2335457.jpg');
+    background-image: url('https://img.czzu.cn/u/enphp/JHKpab6v.jpg');
     background-size: cover;
 }
 .demo-login-container {
@@ -20,3 +20,16 @@ body {
 .layui-elem-quote, .layui-colla-title, .layui-upload-drag, .layui-table{
     background-color: rgba(255, 255, 255, 0.6);
 }
+.layui-input {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+.container {
+    padding-top: 15px;
+    max-width: 100%; /* 限制最大宽度为100% */
+  }
+  .col-xs-12, .col-sm-10, .col-md-8, .col-lg-6 {
+    width: 100%; /* 设置列宽为100% */
+  }
+  .panel {
+    width: 100%;
+  }

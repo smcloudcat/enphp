@@ -1,10 +1,10 @@
 body {
-    background-image: url('https://img.lwcat.cn/images/2024/02/15/bea2335457.jpg');
+    background-image: url('https://img.czzu.cn/u/enphp/JHKpab6v.jpg');
     background-size: cover;
 }
 
 .demo-login-container {
-    max-width: 320px;
+    max-width: 600px;
     margin: 21px auto 0;
     background-color: rgba(255, 255, 255, 0.5);
     padding: 20px;
@@ -19,6 +19,14 @@ body {
     background-color: rgba(255, 255, 255, 0.4);
     border: none;
 }
+
+.table-container {
+    width: 80%;
+    max-width: 1200px;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
 .demo-login-container table {
     background-color: rgba(255, 255, 255, 0.4);
     border: none;
